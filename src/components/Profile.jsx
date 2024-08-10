@@ -33,7 +33,7 @@ function Profile() {
         }
     );
 
-    // Fetch para actualizar vía JSON
+    // Fetch para actualizar perfil
     const {
         data: updatedUserData,
         isLoading: loadingUpdate,
@@ -41,7 +41,7 @@ function Profile() {
         doFetch: updateProfile,
     } = useFetch();
 
-    // Fetch para actualizar vía FormData
+    // Fetch para actualizar imagen de perfil
     const {
         data: profileImageData,
         isLoading: isLoadingUpdate,
@@ -49,6 +49,7 @@ function Profile() {
         doFetch: updateProfileImage,
     } = useFetch();
 
+    // Fetch para obtener estados de usuario
     const {
         data: userStates,
         isLoading: isLoadingUserStates,
@@ -62,20 +63,25 @@ function Profile() {
     });
 
     useEffect(() => {
-        if (updatedUserData && isEditingState) {
-            setIsEditingState(false);
-            userData.state = updatedUserData.state;
-        }
-    }, [updatedUserData]);
-
-    useEffect(() => {
         fetchProfile();
     }, [token]);
 
     useEffect(() => {
+        if (updatedUserData && isEditingState) {
+            setIsEditingState(false);
+            // Asegúrate de que userData esté definido antes de modificarlo
+            if (userData) {
+                userData.state = updatedUserData.state;
+            }
+        }
+    }, [updatedUserData]);
+
+    useEffect(() => {
         if (profileImageData) {
-            // Si no es null o undefined
-            userData.image = profileImageData.image;
+            // Asegúrate de que userData esté definido antes de modificarlo
+            if (userData) {
+                userData.image = profileImageData.image;
+            }
         }
     }, [profileImageData]);
 
@@ -89,45 +95,45 @@ function Profile() {
 
     function handleSubmit(event) {
         event.preventDefault();
-        updateProfile(
-            `${import.meta.env.VITE_API_BASE_URL}users/profiles/${
-                userData.user__id
-            }/`,
-            {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Token ${token}`,
-                },
-                body: JSON.stringify({
-                    first_name: firstNameRef.current.value,
-                    last_name: lastNameRef.current.value,
-                    email: emailRef.current.value,
-                    dob: dobRef.current.value,
-                    bio: bioRef.current.value,
-                }),
-            }
-        );
+        if (userData) {
+            updateProfile(
+                `${import.meta.env.VITE_API_BASE_URL}users/profiles/${userData.user__id}/`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Token ${token}`,
+                    },
+                    body: JSON.stringify({
+                        first_name: firstNameRef.current.value,
+                        last_name: lastNameRef.current.value,
+                        email: emailRef.current.value,
+                        dob: dobRef.current.value,
+                        bio: bioRef.current.value,
+                    }),
+                }
+            );
+        }
     }
 
     function handleStateChange(event) {
         const newUserStateID = event.target.value;
 
-        updateProfile(
-            `${import.meta.env.VITE_API_BASE_URL}users/profiles/${
-                userData.user__id
-            }/`,
-            {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Token ${token}`,
-                },
-                body: JSON.stringify({
-                    state: newUserStateID,
-                }),
-            }
-        );
+        if (userData) {
+            updateProfile(
+                `${import.meta.env.VITE_API_BASE_URL}users/profiles/${userData.user__id}/`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Token ${token}`,
+                    },
+                    body: JSON.stringify({
+                        state: newUserStateID,
+                    }),
+                }
+            );
+        }
     }
 
     if (isLoadingProfile) return <p>Cargando perfil...</p>;
@@ -199,7 +205,7 @@ function Profile() {
                                                     }
                                                     onChange={handleStateChange}
                                                 >
-                                                    {/* {isLoadingUserStates && (
+                                                    {isLoadingUserStates && (
                                                         <option>
                                                             Cargando estados...
                                                         </option>
@@ -209,7 +215,7 @@ function Profile() {
                                                             Error al cargar los
                                                             estados
                                                         </option>
-                                                    )} */}
+                                                    )}
                                                     {userStates &&
                                                         userStates.results.map(
                                                             (state) => (
@@ -257,6 +263,7 @@ function Profile() {
                             <button
                                 className="button is-primary"
                                 onClick={handleEditMode}
+                                type="button"
                             >
                                 {!editMode ? "Editar" : "Salir"}
                             </button>
@@ -331,14 +338,12 @@ function Profile() {
                         userId={userData.user__id}
                         onUpload={{
                             isLoadingUpdate,
-                            profileImageData,
+                            errorProfileImage,
                             updateProfileImage,
                         }}
                     />
                 </>
-            ) : (
-                <p className="subtitle">No se encontraron datos del usuario.</p>
-            )}
+            ) : null}
         </div>
     );
 }

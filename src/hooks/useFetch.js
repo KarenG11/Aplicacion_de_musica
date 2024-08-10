@@ -1,31 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-function useFetch(initialUrl, initialOptions = {}) {
+function useFetch(url, options) {
     const [data, setData] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [isError, setIsError] = useState(null);
 
-    function doFetch(url = initialUrl, options = initialOptions) {
+    const doFetch = async (customUrl, customOptions) => {
         setIsLoading(true);
         setIsError(null);
+        try {
+            const response = await fetch(customUrl || url, customOptions || options);
+            if (!response.ok) {
+                throw new Error("Error en la solicitud");
+            }
+            const result = await response.json();
+            setData(result);
+        } catch (error) {
+            setIsError(error.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-        fetch(url, options)
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error("Error al obtener datos");
-                }
-                return response.json();
-            })
-            .then((data) => {
-                setData(data);
-            })
-            .catch((error) => {
-                setIsError(error.message);
-            })
-            .finally(() => {
-                setIsLoading(false);
-            });
-    }
+    useEffect(() => {
+        doFetch();
+    }, [url, options]);
 
     return { data, isLoading, isError, doFetch };
 }

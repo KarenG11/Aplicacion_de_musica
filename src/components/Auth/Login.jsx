@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import './login.css'; // Importa el archivo CSS
+import './login.css'; 
 
 function Login() {
     const usernameRef = useRef("");
@@ -8,7 +8,8 @@ function Login() {
     const [isError, setIsError] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    const { login } = useAuth("actions");
+    // Accede a las acciones del contexto
+    const { actions } = useAuth(); // Cambiado para extraer `actions` del contexto
 
     function handleSubmit(event) {
         event.preventDefault();
@@ -31,7 +32,7 @@ function Login() {
                     return response.json();
                 })
                 .then((responseData) => {
-                    login(responseData.token);
+                    actions.login(responseData.token); // Usa `actions.login`
                     if (responseData.token) {
                         fetch(
                             `${import.meta.env.VITE_API_BASE_URL}users/profiles/profile_data/`,
@@ -49,7 +50,7 @@ function Login() {
                                 return profileResponse.json();
                             })
                             .then((profileData) =>
-                                login(responseData.token, profileData.user__id)
+                                actions.login(responseData.token, profileData.user__id) // Usa `actions.login`
                             )
                             .catch((error) => {
                                 console.error("Error al obtener id de usuario", error);
@@ -66,6 +67,10 @@ function Login() {
                 });
         }
     }
+
+    useEffect(() => {
+        // Aquí podrías gestionar la redirección o las acciones necesarias después de un login exitoso
+    }, [actions, isError]);
 
     return (
         <section className="login-section">
@@ -111,6 +116,7 @@ function Login() {
                                 <button
                                     type="submit"
                                     className="button is-primary is-fullwidth"
+                                    disabled={isLoading}
                                 >
                                     Enviar
                                 </button>
