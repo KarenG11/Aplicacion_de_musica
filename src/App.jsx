@@ -5,47 +5,53 @@ import SongList from './components/SongList';
 import Profile from './components/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './components/Login';
-import Signup from './components/Signup'; // Asegúrate de tener el componente Signup
+import Signup from './components/Signup';
+import ErrorBoundary from './components/ErrorBoundary';
+import { AuthProvider } from './contexts/AuthContext'; // Asegúrate de que la ruta sea correcta
 
 import './App.css';
 
 function App() {
-  const { primary, secondary } = useTheme("state");
+  const { primary, secondary } = useTheme(); // useTheme no necesita argumentos
 
   return (
-    <Router>
-      <div className={`box has-background-${secondary}`}>
-        <ThemePicker />
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} /> {/* Agrega esta línea */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <ArticleForm />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/songs"
-            element={
-              <ProtectedRoute>
-                <SongList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </div>
-    </Router>
+    <AuthProvider>
+      <ErrorBoundary>
+        <Router>
+          <div className={`box has-background-${secondary}`}>
+            <ThemePicker />
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <ArticleForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/songs"
+                element={
+                  <ProtectedRoute>
+                    <SongList />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </div>
+        </Router>
+      </ErrorBoundary>
+    </AuthProvider>
   );
 }
 

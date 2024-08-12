@@ -33,7 +33,7 @@ function Profile() {
         }
     );
 
-    // Fetch para actualizar perfil
+    // Fetch para actualizar vía JSON
     const {
         data: updatedUserData,
         isLoading: loadingUpdate,
@@ -41,7 +41,7 @@ function Profile() {
         doFetch: updateProfile,
     } = useFetch();
 
-    // Fetch para actualizar imagen de perfil
+    // Fetch para actualizar vía FormData
     const {
         data: profileImageData,
         isLoading: isLoadingUpdate,
@@ -61,7 +61,7 @@ function Profile() {
             Authorization: `Token ${token}`,
         },
     });
-
+    
     useEffect(() => {
         fetchProfile();
     }, [token]);
@@ -69,25 +69,29 @@ function Profile() {
     useEffect(() => {
         if (updatedUserData && isEditingState) {
             setIsEditingState(false);
-            // Asegúrate de que userData esté definido antes de modificarlo
+
             if (userData) {
-                userData.state = updatedUserData.state;
+                setUserData(prevUserData => ({
+                    ...prevUserData,
+                    state: updatedUserData.state,
+                }));
             }
         }
     }, [updatedUserData]);
-
+    
     useEffect(() => {
-        if (profileImageData) {
-            // Asegúrate de que userData esté definido antes de modificarlo
-            if (userData) {
-                userData.image = profileImageData.image;
-            }
+        if (profileImageData && userData) {
+            setUserData(prevUserData => ({
+                ...prevUserData,
+                image: profileImageData.image,
+            }));
         }
-    }, [profileImageData]);
+    }, [profileImageData, userData]);
+    
 
     useEffect(() => {
         fetchUserStates();
-    }, [isEditingState]);
+    }, []);
 
     function handleEditMode() {
         setEditMode(!editMode);
@@ -95,7 +99,7 @@ function Profile() {
 
     function handleSubmit(event) {
         event.preventDefault();
-        if (userData) {
+        if(userData){
             updateProfile(
                 `${import.meta.env.VITE_API_BASE_URL}users/profiles/${userData.user__id}/`,
                 {
@@ -114,27 +118,27 @@ function Profile() {
                 }
             );
         }
-    }
+        }
 
     function handleStateChange(event) {
         const newUserStateID = event.target.value;
-
-        if (userData) {
-            updateProfile(
-                `${import.meta.env.VITE_API_BASE_URL}users/profiles/${userData.user__id}/`,
-                {
-                    method: "PATCH",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Token ${token}`,
-                    },
-                    body: JSON.stringify({
-                        state: newUserStateID,
-                    }),
-                }
-            );
-        }
+    if(userData){
+        updateProfile(
+            `${import.meta.env.VITE_API_BASE_URL}users/profiles/${userData.user__id}/`,
+            {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Token ${token}`,
+                },
+                body: JSON.stringify({
+                    state: newUserStateID,
+                }),
+            }
+        );
     }
+}
+
 
     if (isLoadingProfile) return <p>Cargando perfil...</p>;
     if (isErrorProfile) return <p>Error: {isErrorProfile}</p>;
@@ -324,9 +328,13 @@ function Profile() {
                                         {loadingUpdate
                                             ? "Enviando..."
                                             : "Enviar"}
-                                        {errorUpdating
-                                            ? "Ocurrió un error al enviar el formulario"
-                                            : null}
+                                        {errorUpdating && (
+                                            <span>
+                                                {" "}
+                                                (Ocurrió un error al enviar el
+                                                formulario)
+                                            </span>
+                                        )}
                                     </button>
                                 </div>
                             ) : null}
@@ -335,15 +343,24 @@ function Profile() {
                     <ProfileImageModal
                         isOpen={isModalOpen}
                         onClose={() => setIsModalOpen(false)}
-                        userId={userData.user__id}
-                        onUpload={{
-                            isLoadingUpdate,
-                            errorProfileImage,
-                            updateProfileImage,
+                        onUpload={(imageData) => {
+                            updateProfileImage(
+                                `${import.meta.env.VITE_API_BASE_URL}users/profiles/${userData.user__id}/`,
+                                {
+                                    method: "PATCH",
+                                    headers: {
+                                        "Content-Type": "multipart/form-data",
+                                        Authorization: `Token ${token}`,
+                                    },
+                                    body: imageData,
+                                }
+                            );
                         }}
                     />
                 </>
-            ) : null}
+            ) : (
+                <p>No se encontraron datos de perfil</p>
+            )}
         </div>
     );
 }

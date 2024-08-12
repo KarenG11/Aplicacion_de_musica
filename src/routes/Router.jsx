@@ -3,11 +3,12 @@ import { createBrowserRouter } from "react-router-dom";
 import ArticleForm from "../components/ArticleForm";
 import Home from "../components/Home";
 import Login from "../components/Auth/Login";
-import Signup from "../components/Auth/Signup"; // Asegúrate de importar Signup
+import Signup from "../components/Auth/Signup";
 import Layout from "./Layout";
 import ProtectedRoute from "./ProtectedRoute";
 import Profile from "../components/Profile";
 import SongList from "../components/MusicPlayer/SongList";
+import NotFound from "../components/NotFound"; // Asegúrate de tener un componente NotFound
 
 const Router = createBrowserRouter([
     {
@@ -22,7 +23,7 @@ const Router = createBrowserRouter([
                 children: [
                     {
                         index: true,
-                        element: <h1>Articulos</h1>,
+                        element: <h1>Artículos</h1>,
                     },
                     {
                         path: "add",
@@ -39,12 +40,16 @@ const Router = createBrowserRouter([
                 element: <Login />,
             },
             {
-                path: "signup", // Asegúrate de que esta ruta esté configurada
+                path: "signup",
                 element: <Signup />,
             },
             {
                 path: "songs",
-                element: <SongList />,
+                element: (
+                    <ProtectedRoute>
+                        <SongList />
+                    </ProtectedRoute>
+                ),
             },
             {
                 path: "profile",
@@ -58,7 +63,7 @@ const Router = createBrowserRouter([
     },
     {
         path: "*",
-        element: <h1>Not Found</h1>,
+        element: <NotFound />, // Asegúrate de tener un componente NotFound
     },
 ]);
 

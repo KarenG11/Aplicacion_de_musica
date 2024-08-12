@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import SongCard from "./SongCard";
 import { useAuth } from "../../contexts/AuthContext";
+import './SongList.css';
 
 function SongList() {
     const [page, setPage] = useState(1);
@@ -10,33 +11,24 @@ function SongList() {
     const [isLoading, setIsLoading] = useState(false);
     const [filters, setFilters] = useState({});
 
-    const { user__id } = useAuth("state");
-
+    const { token, user__id } = useAuth("state");
     const observerRef = useRef();
-    const lastSongElementRef = useRef();
 
     const doFetch = async () => {
         setIsLoading(true);
-    
-        // Obtenemos el token desde las variables de entorno (si es necesario)
-        const token = import.meta.env.VITE_AUTH_TOKEN;
-    
         let query = new URLSearchParams({
             page: page,
             page_size: 5,
             ordering: `-created_at`,
             ...filters,
         }).toString();
-    
-        fetch(
-            `${import.meta.env.VITE_API_BASE_URL}harmonyhub/songs/?${query}`,
-            {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-            }
-        )
+
+        fetch(`${import.meta.env.VITE_API_BASE_URL}harmonyhub/songs/?${query}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        })
             .then((response) => response.json())
             .then((data) => {
                 if (data.results) {
@@ -44,47 +36,47 @@ function SongList() {
                     setNextUrl(data.next);
                 }
             })
-            .catch(() => {
+            .catch((error) => {
+                console.error("Error al obtener canciones:", error);
                 setIsError(true);
             })
             .finally(() => {
                 setIsLoading(false);
             });
     };
-    
 
     useEffect(() => {
         doFetch();
     }, [page, filters]);
 
     useEffect(() => {
-        // Si la petición esta en proceso no creamos observador
-        if (isLoading) return;
+        if (isLoading || !nextUrl) return;
 
-        // Si hay otro observador definido lo desuscribimos
         if (observerRef.current) {
             observerRef.current.disconnect();
         }
 
-        // Creamos y referenciamos el observador de tarjetas actual
-        observerRef.current = new IntersectionObserver((cards) => {
-            // Observamos todas las tarjetas de la nueva página cargada
-            if (cards[0].isIntersecting && nextUrl) {
+        observerRef.current = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
                 setPage((prevPage) => prevPage + 1);
             }
         });
 
-        // Actualizamos la referencia al última tarjeta
-        if (lastSongElementRef.current) {
-            observerRef.current.observe(lastSongElementRef.current);
+        const lastSongElement = document.querySelector(".song-list .column:last-child");
+        if (lastSongElement) {
+            observerRef.current.observe(lastSongElement);
         }
+
+        return () => {
+            if (observerRef.current) {
+                observerRef.current.disconnect();
+            }
+        };
     }, [isLoading, nextUrl]);
 
     function handleSearch(event) {
         event.preventDefault();
-
         const searchForm = new FormData(event.target);
-
         const newFilters = {};
 
         searchForm.forEach((value, key) => {
@@ -99,13 +91,14 @@ function SongList() {
     }
 
     if (isError) return <p>Error al cargar las canciones.</p>;
-    if (!songs.length && !isLoading) return <p>No hay canciones disponibles</p>;
+    if (!songs.length && !isLoading) return <p>No hay canciones disponibles.</p>;
 
     return (
-        <div>
+        <div className="song-list">
             <div className="my-5">
                 <h2 className="title">Lista de Canciones</h2>
                 <form className="box" onSubmit={handleSearch}>
+                    {/* Formulario de búsqueda */}
                     <div className="field">
                         <label className="label">Título:</label>
                         <div className="control">
@@ -115,31 +108,19 @@ function SongList() {
                     <div className="field">
                         <label className="label">Artista:</label>
                         <div className="control">
-                            <input
-                                className="input"
-                                type="number"
-                                name="artists"
-                            />
+                            <input className="input" type="number" name="artists" />
                         </div>
                     </div>
                     <div className="field">
                         <label className="label">Fecha de inicio:</label>
                         <div className="control">
-                            <input
-                                className="input"
-                                type="datetime-local"
-                                name="created_at_min"
-                            />
+                            <input className="input" type="datetime-local" name="created_at_min" />
                         </div>
                     </div>
                     <div className="field">
                         <label className="label">Fecha de fin:</label>
                         <div className="control">
-                            <input
-                                className="input"
-                                type="datetime-local"
-                                name="created_at_max"
-                            />
+                            <input className="input" type="datetime-local" name="created_at_max" />
                         </div>
                     </div>
                     <div className="field">
@@ -149,28 +130,14 @@ function SongList() {
                     </div>
                 </form>
                 <ul>
-                    {songs.map((song, index) => {
-                        if (songs.length === index + 1) {
-                            return (
-                                <div
-                                    key={song.id}
-                                    ref={lastSongElementRef}
-                                    className="column is-two-thirds"
-                                >
-                                    <SongCard song={song} user_ID={user__id} />
-                                </div>
-                            );
-                        } else {
-                            return (
-                                <div
-                                    key={song.id}
-                                    className="column is-two-thirds"
-                                >
-                                    <SongCard song={song} user_ID={user__id} />
-                                </div>
-                            );
-                        }
-                    })}
+                    {songs.map((song) => (
+                        <div
+                            key={song.id}
+                            className="column is-two-thirds"
+                        >
+                            <SongCard song={song} user_ID={user__id} />
+                        </div>
+                    ))}
                 </ul>
                 {isLoading && <p>Cargando más canciones...</p>}
             </div>
