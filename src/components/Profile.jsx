@@ -3,6 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import useFetch from "../hooks/useFetch";
 import ProfileImageModal from "./ProfileImageModal";
 
+
 function Profile() {
     const { token } = useAuth("state");
 
@@ -86,7 +87,8 @@ function Profile() {
                 image: profileImageData.image,
             }));
         }
-    }, [profileImageData, userData]);
+    }, [profileImageData]); // Remover userData si no cambia frecuentemente
+    
     
 
     useEffect(() => {
