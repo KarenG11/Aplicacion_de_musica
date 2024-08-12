@@ -53,4 +53,4 @@ Contribuciones
 ¡Gracias por tu interés en nuestro proyecto!
 
 Licencia
-Este proyecto está licenciado bajo la Licencia MIT. Consulta el archivo LICENCIA para más detalles.
+Este proyecto está licenciado bajo la Licencia MIT. Consulta el archivo LICENCIA para más detalles
